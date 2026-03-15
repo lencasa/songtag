@@ -8,14 +8,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
     build-essential \
+    libglib2.0-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Rust, then build and install SongRec from crates.io (no GUI deps needed)
+# Install Rust, then build SongRec with only the features we need (no GUI, no GTK)
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable \
     && . "$HOME/.cargo/env" \
-    && cargo install songrec --no-default-features \
+    && cargo install songrec --no-default-features -F ffmpeg \
     && cp "$HOME/.cargo/bin/songrec" /usr/local/bin/songrec \
-    && rm -rf "$HOME/.cargo/registry" "$HOME/.cargo/git"
+    && rm -rf "$HOME/.cargo/registry" "$HOME/.cargo/git" "$HOME/.rustup"
 
 WORKDIR /app
 
