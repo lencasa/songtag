@@ -1,6 +1,5 @@
 FROM python:3.11-slim
 
-# System deps: songrec needs Rust audio libs, ffmpeg for format support
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     libasound2-dev \
@@ -8,13 +7,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     pkg-config \
     curl \
     ca-certificates \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Install songrec binary from GitHub releases (pre-built, no Rust toolchain needed)
-RUN curl -fsSL \
-    https://github.com/marin-m/SongRec/releases/latest/download/songrec-linux-x86_64 \
-    -o /usr/local/bin/songrec \
-    && chmod +x /usr/local/bin/songrec
+# Install Rust, then build and install SongRec from crates.io (no GUI deps needed)
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable \
+    && . "$HOME/.cargo/env" \
+    && cargo install songrec --no-default-features \
+    && cp "$HOME/.cargo/bin/songrec" /usr/local/bin/songrec \
+    && rm -rf "$HOME/.cargo/registry" "$HOME/.cargo/git"
 
 WORKDIR /app
 
@@ -23,7 +24,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py .
 
-# Streamlit config — disable telemetry, set port
 ENV STREAMLIT_SERVER_PORT=8501 \
     STREAMLIT_SERVER_ADDRESS=0.0.0.0 \
     STREAMLIT_BROWSER_GATHER_USAGE_STATS=false \
