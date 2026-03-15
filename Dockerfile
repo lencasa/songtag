@@ -9,9 +9,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     build-essential \
     libglib2.0-dev \
+    libsoup-3.0-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Rust, then build SongRec with only the features we need (no GUI, no GTK)
+# Install Rust, then build SongRec from source (no GUI, no GTK — CLI only)
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable \
     && . "$HOME/.cargo/env" \
     && cargo install songrec --no-default-features -F ffmpeg \
