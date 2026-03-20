@@ -328,7 +328,7 @@ def tag_file(file_bytes, track_meta, year_val, genre_str):
         if audiofile is None:
             raise Exception("Failed to load MP3")
         if audiofile.tag is None:
-            audiofile.initTag()
+            audiofile.initTag(version=eyed3.id3.ID3_V2_4)
         tag = audiofile.tag
         tag.title        = track_meta["title"]
         tag.artist       = track_meta["artist"]
@@ -354,7 +354,7 @@ def tag_file(file_bytes, track_meta, year_val, genre_str):
             except Exception:
                 pass
 
-        tag.save()
+        tag.save(version=eyed3.id3.ID3_V2_4, encoding='utf-8')
         with open(tmp_path, "rb") as f:
             return f.read(), None
     except Exception as e:
