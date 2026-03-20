@@ -1,4 +1,6 @@
 import streamlit as st
+import zipfile
+import io
 import html
 import subprocess
 import json
@@ -501,7 +503,6 @@ if "results" in st.session_state and st.session_state["results"]:
                 r    = results[name]
                 meta = r["meta"]
                 pt   = per_track.get(name, {})
-                # Priority: per-track > global > Shazam detected
                 year_str  = pt.get("year","")  or global_year.strip()  or meta["year"]
                 genre_str = pt.get("genre","") or global_genre.strip() or meta.get("shazam_genre","")
                 year_val  = int(year_str) if year_str.isdigit() and len(year_str)==4 else None
@@ -511,21 +512,46 @@ if "results" in st.session_state and st.session_state["results"]:
                 else:
                     tagged_files.append((safe_name(meta["safe_base"]) + ".mp3", tagged_bytes))
             prog2.progress(1.0, text="All done!")
-
             if tagged_files:
-                st.markdown('<div class="section-label" style="margin-top:1.5rem">05 — Download</div>', unsafe_allow_html=True)
-                for out_name, tagged_bytes in tagged_files:
-                    _, col_dl, _ = st.columns([2, 3, 2])
-                    with col_dl:
-                        st.download_button(
-                            label=f"⬇  {out_name}",
-                            data=tagged_bytes,
-                            file_name=out_name,
-                            mime="audio/mpeg",
-                            key=f"dl_{out_name}",
-                            type="primary",
-                            use_container_width=True,
-                        )
+                st.session_state["tagged_files"] = tagged_files
+
+        # ── Download section — persists after any button click ──
+        if st.session_state.get("tagged_files"):
+            tagged_files = st.session_state["tagged_files"]
+            st.markdown('<div class="section-label" style="margin-top:1.5rem">05 — Download</div>', unsafe_allow_html=True)
+
+            # Zip download (only shown when >1 file)
+            if len(tagged_files) > 1:
+                zip_buf = io.BytesIO()
+                with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
+                    for out_name, tagged_bytes in tagged_files:
+                        zf.writestr(out_name, tagged_bytes)
+                zip_buf.seek(0)
+                _, col_zip, _ = st.columns([2, 3, 2])
+                with col_zip:
+                    st.download_button(
+                        label="⬇  Download All as ZIP",
+                        data=zip_buf.getvalue(),
+                        file_name="songtag_export.zip",
+                        mime="application/zip",
+                        key="dl_zip",
+                        type="primary",
+                        use_container_width=True,
+                    )
+                st.markdown("<div style='height:0.4rem'></div>", unsafe_allow_html=True)
+
+            # Individual file downloads
+            for out_name, tagged_bytes in tagged_files:
+                _, col_dl, _ = st.columns([2, 3, 2])
+                with col_dl:
+                    st.download_button(
+                        label=f"⬇  {out_name}",
+                        data=tagged_bytes,
+                        file_name=out_name,
+                        mime="audio/mpeg",
+                        key=f"dl_{out_name}",
+                        use_container_width=True,
+                    )
 
 # ── Footer ────────────────────────────────────────────────────────────────────
 st.markdown("""
