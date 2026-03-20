@@ -459,8 +459,25 @@ if "results" in st.session_state and st.session_state["results"]:
         st.markdown('<div class="section-label" style="margin-top:2.5rem">04 — Tag options</div>', unsafe_allow_html=True)
         st.caption("Global overrides apply to all tracks. Per-track fields take priority. Leave blank to use each track's Shazam-detected value.")
 
+        # Genre prefix checkboxes
+        st.markdown('<div class="sub-label">Genre prefix</div>', unsafe_allow_html=True)
+        cp1, cp2, cp3, cp4 = st.columns([2, 2, 2, 3])
+        with cp1:
+            pfx_russian = st.checkbox("Russian", key="pfx_russian")
+        with cp2:
+            pfx_latin = st.checkbox("Latin", key="pfx_latin")
+        with cp3:
+            pfx_intl = st.checkbox("International", key="pfx_intl")
+
+        # Build prefix string — only one should be ticked but handle multiples gracefully
+        genre_prefixes = []
+        if pfx_russian:    genre_prefixes.append("Russian")
+        if pfx_latin:      genre_prefixes.append("Latin")
+        if pfx_intl:       genre_prefixes.append("International")
+        genre_prefix = " ".join(genre_prefixes)
+
         # Global overrides
-        st.markdown('<div class="sub-label">Global overrides</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sub-label" style="margin-top:1rem">Global overrides</div>', unsafe_allow_html=True)
         col1, col2 = st.columns(2)
         with col1:
             global_year = st.text_input("Year — all tracks", value="", placeholder="e.g. 1994", key="global_year")
@@ -504,7 +521,8 @@ if "results" in st.session_state and st.session_state["results"]:
                 meta = r["meta"]
                 pt   = per_track.get(name, {})
                 year_str  = pt.get("year","")  or global_year.strip()  or meta["year"]
-                genre_str = pt.get("genre","") or global_genre.strip() or meta.get("shazam_genre","")
+                base_genre = pt.get("genre","") or global_genre.strip() or meta.get("shazam_genre","")
+                genre_str  = (genre_prefix + " " + base_genre).strip() if genre_prefix else base_genre
                 year_val  = int(year_str) if year_str.isdigit() and len(year_str)==4 else None
                 tagged_bytes, err = tag_file(r["file_bytes"], meta, year_val, genre_str)
                 if err:
