@@ -365,7 +365,7 @@ def tag_file(file_bytes, track_meta, year_val, genre_str):
 
 
 def safe_name(s):
-    return "".join(c for c in s if c.isalnum() or c in " -_().")
+    return "".join(c for c in s if c.isalnum() or c in " -_().&")
 
 
 # ── Upload ───────────────────────────────────────────────────────────────────
